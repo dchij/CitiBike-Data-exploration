@@ -1,0 +1,55 @@
+-- Exploration of the CitiBike Trip Data
+
+-- Checking for error in the dataset
+SELECT * FROM `bigquery-public-data.new_york_citibike.citibike_trips` 
+where extract(year from starttime) = 2016 and extract(year from stoptime) = 2017 LIMIT 1000
+
+-- Focused on data from 2016 and 2017
+SELECT * FROM `bigquery-public-data.new_york_citibike.citibike_trips` 
+where extract(year from starttime) = 2016 or extract(year from starttime) = 2017 LIMIT 1000
+
+-- Counted the number of rows in the dataset (used starttime column)
+SELECT count(*) FROM `bigquery-public-data.new_york_citibike.citibike_trips` 
+where extract(year from starttime) = 2016 or extract(year from starttime) = 2017 
+--count result - 24381318
+
+-- Counted the number of rows in the dataset (used stoptime column)
+SELECT count(*) FROM `bigquery-public-data.new_york_citibike.citibike_trips` 
+where extract(year from stoptime) = 2016 or extract(year from stoptime) = 2017 	
+--count result - 24381384
+
+-- From the count results above, there's difference. So, narrowed down data where the trip start time and stop time started and ended in same year
+-- Inspect row count
+SELECT count(*) FROM `bigquery-public-data.new_york_citibike.citibike_trips` 
+where (extract(year from starttime) = 2016 and extract(year from stoptime) = 2016)
+or (extract(year from starttime) = 2017 and extract(year from stoptime) = 2017) 
+--count result - 24381275
+
+-- Same result as above
+SELECT count(*) FROM `bigquery-public-data.new_york_citibike.citibike_trips` 
+where extract(year from starttime) in (2016, 2017) and extract(year from stoptime) in (2016, 2017) 
+--count result - 24381275
+
+tripduration, starttime, stoptime, start_station_id,
+       start_station_name, start_station_latitude,
+       start_station_longitude, end_station_id, end_station_name,
+       end_station_latitude, end_station_longitude, bikeid, usertype,
+       
+       
+       
+       
+       SELECT tripduration, starttime, stoptime, start_station_id,
+       start_station_name, start_station_latitude,
+       start_station_longitude, end_station_id, end_station_name,
+       end_station_latitude, end_station_longitude, bikeid, usertype,
+       birth_year, gender, customer_plan, count(*) as frequency
+FROM `bigquery-public-data.new_york_citibike.citibike_trips` 
+WHERE extract(year from starttime) in (2016, 2017) and extract(year from stoptime) in (2016, 2017)
+GROUP BY 
+tripduration, starttime, stoptime, start_station_id,
+       start_station_name, start_station_latitude,
+       start_station_longitude, end_station_id, end_station_name,
+       end_station_latitude, end_station_longitude, bikeid, usertype,
+       birth_year, gender, customer_plan
+HAVING 
+       birth_year, gender, customer_plan
