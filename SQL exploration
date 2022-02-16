@@ -30,14 +30,7 @@ SELECT count(*) FROM `bigquery-public-data.new_york_citibike.citibike_trips`
 where extract(year from starttime) in (2016, 2017) and extract(year from stoptime) in (2016, 2017) 
 --count result - 24381275
 
-tripduration, starttime, stoptime, start_station_id,
-       start_station_name, start_station_latitude,
-       start_station_longitude, end_station_id, end_station_name,
-       end_station_latitude, end_station_longitude, bikeid, usertype,
-       
-       
-       
-       
+-- Check for duplicates and Record frequency 
        SELECT tripduration, starttime, stoptime, start_station_id,
        start_station_name, start_station_latitude,
        start_station_longitude, end_station_id, end_station_name,
@@ -51,5 +44,134 @@ tripduration, starttime, stoptime, start_station_id,
        start_station_longitude, end_station_id, end_station_name,
        end_station_latitude, end_station_longitude, bikeid, usertype,
        birth_year, gender, customer_plan
-HAVING 
+
+-- Check for duplicates in the frequency column
+SELECT tripduration, starttime, stoptime, start_station_id,
+       start_station_name, start_station_latitude,
+       start_station_longitude, end_station_id, end_station_name,
+       end_station_latitude, end_station_longitude, bikeid, usertype,
+       birth_year, gender, customer_plan, count(*) as frequency
+FROM `bigquery-public-data.new_york_citibike.citibike_trips` 
+WHERE extract(year from starttime) in (2016, 2017) and extract(year from stoptime) in (2016, 2017)
+GROUP BY 
+tripduration, starttime, stoptime, start_station_id,
+       start_station_name, start_station_latitude,
+       start_station_longitude, end_station_id, end_station_name,
+       end_station_latitude, end_station_longitude, bikeid, usertype,
        birth_year, gender, customer_plan
+HAVING count(*) > 1
+-- no duplicates
+
+-- Start Station Frequency Counts
+SELECT
+  start_station_name,
+  COUNT(*) AS frequency,
+  ROUND(
+  100 * COUNT(*) / SUM(COUNT(*)) OVER (),
+    2
+  ) AS percentage      
+FROM `bigquery-public-data.new_york_citibike.citibike_trips` 
+WHERE extract(year from starttime) in (2016, 2017) and extract(year from stoptime) in (2016, 2017)
+GROUP BY start_station_name
+ORDER BY frequency DESC
+
+-- End Station Frequency Counts
+SELECT
+  end_station_name,
+  COUNT(*) AS frequency,
+  ROUND(
+    100 * COUNT(*) / SUM(COUNT(*)) OVER (),
+    2
+  ) AS percentage
+FROM `bigquery-public-data.new_york_citibike.citibike_trips` 
+WHERE extract(year from starttime) in (2016, 2017) and extract(year from stoptime) in (2016, 2017)
+GROUP BY end_station_name
+ORDER BY frequency DESC
+
+-- Distinct Start stations
+SELECT
+  COUNT(DISTINCT start_station_name)
+FROM `bigquery-public-data.new_york_citibike.citibike_trips` 
+WHERE extract(year from starttime) in (2016, 2017) and extract(year from stoptime) in (2016, 2017)
+-- count result - 855
+
+-- Distinct End stations
+SELECT
+  COUNT(DISTINCT end_station_name)
+FROM `bigquery-public-data.new_york_citibike.citibike_trips` 
+WHERE extract(year from starttime) in (2016, 2017) and extract(year from stoptime) in (2016, 2017)
+-- count result - 897
+
+-- Check end stations where trips did not start
+SELECT
+ distinct end_station_name
+FROM `bigquery-public-data.new_york_citibike.citibike_trips` 
+WHERE (extract(year from starttime) in (2016, 2017) and extract(year from stoptime) in (2016, 2017))
+AND end_station_name NOT IN (SELECT
+  DISTINCT start_station_name
+FROM `bigquery-public-data.new_york_citibike.citibike_trips` 
+WHERE extract(year from starttime) in (2016, 2017) and extract(year from stoptime) in (2016, 2017))
+
+-- Count the unique end stations where trips did not start
+SELECT
+ count(distinct end_station_name)
+FROM `bigquery-public-data.new_york_citibike.citibike_trips` 
+WHERE (extract(year from starttime) in (2016, 2017) and extract(year from stoptime) in (2016, 2017))
+AND end_station_name NOT IN (SELECT
+  DISTINCT start_station_name
+FROM `bigquery-public-data.new_york_citibike.citibike_trips` 
+WHERE extract(year from starttime) in (2016, 2017) and extract(year from stoptime) in (2016, 2017))
+-- count result - 44
+
+-- Check start stations where trips did not end
+SELECT
+ distinct start_station_name
+FROM `bigquery-public-data.new_york_citibike.citibike_trips` 
+WHERE (extract(year from starttime) in (2016, 2017) and extract(year from stoptime) in (2016, 2017))
+AND start_station_name NOT IN (SELECT
+  DISTINCT end_station_name
+FROM `bigquery-public-data.new_york_citibike.citibike_trips` 
+WHERE extract(year from starttime) in (2016, 2017) and extract(year from stoptime) in (2016, 2017))
+
+-- Count the unique start stations where trips did not end
+SELECT
+ count(distinct start_station_name)
+FROM `bigquery-public-data.new_york_citibike.citibike_trips` 
+WHERE (extract(year from starttime) in (2016, 2017) and extract(year from stoptime) in (2016, 2017))
+AND start_station_name NOT IN (SELECT
+  DISTINCT end_station_name
+FROM `bigquery-public-data.new_york_citibike.citibike_trips` 
+WHERE extract(year from starttime) in (2016, 2017) and extract(year from stoptime) in (2016, 2017))
+-- count result - 2
+
+-- Count of trips that started and ended at same station
+SELECT
+ count(start_station_name)
+FROM `bigquery-public-data.new_york_citibike.citibike_trips` 
+WHERE (extract(year from starttime) in (2016, 2017) and extract(year from stoptime) in (2016, 2017))
+AND end_station_name   = start_station_name
+-- count result - 492598
+
+-- Count of trips that did not start and end at same station
+SELECT
+ count( start_station_name)
+FROM `bigquery-public-data.new_york_citibike.citibike_trips` 
+WHERE (extract(year from starttime) in (2016, 2017) and extract(year from stoptime) in (2016, 2017))
+AND end_station_name   != start_station_name
+--count results - 23888677
+
+-- Count-------
+SELECT
+ count(distinct start_station_name)
+FROM `bigquery-public-data.new_york_citibike.citibike_trips` 
+WHERE (extract(year from starttime) in (2016, 2017) and extract(year from stoptime) in (2016, 2017))
+AND start_station_name IN (SELECT
+  DISTINCT end_station_name
+FROM `bigquery-public-data.new_york_citibike.citibike_trips` 
+WHERE extract(year from starttime) in (2016, 2017) and extract(year from stoptime) in (2016, 2017))
+-- count result - 853
+
+-- Exploration of the CitiBike Station Data
+
+SELECT  distinct last_reported FROM `bigquery-public-data.new_york_citibike.citibike_stations` 
+
